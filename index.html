@@ -151,8 +151,49 @@
             { text: "I am the way and the truth and the life. No one comes to the Father except through me.", author: "John 14:6" },
             { text: "The name of the Lord is a fortified tower; the righteous run to it and are safe.", author: "Proverbs 18:10" },
             { text: "If we confess our sins, he is faithful and just and will forgive us our sins and purify us from all unrighteousness.", author: "1 John 1:9" },
-            { text: "Delight yourself in the Lord, and he will give you the desires of your heart.", author: "Psalm 37:4" }
+            { text: "Delight yourself in the Lord, and he will give you the desires of your heart.", author: "Psalm 37:4" },
+            { text: "For whoever wants to save their life will lose it, but whoever loses their life for me will save it.", author: "Luke 9:24" }
         ];
+
+        // Fisher-Yates shuffle algorithm
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Function to generate a deterministic seed based on the year
+        function getYearSeed(year) {
+            return year * 123456; // Simple seed based on year
+        }
+
+        // Seeded random number generator
+        function seededRandom(seed) {
+            const m = 0x80000000; // 2^31
+            const a = 1103515245;
+            const c = 12345;
+            let state = seed;
+            
+            return function() {
+                state = (a * state + c) % m;
+                return state / m;
+            };
+        }
+
+        // Seeded shuffle algorithm
+        function seededShuffle(array, seed) {
+            const shuffled = [...array];
+            const rng = seededRandom(seed);
+            
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
 
         // Function to display quote based on the day of the year
         function displayDailyQuote() {
@@ -168,9 +209,16 @@
             const oneDay = 1000 * 60 * 60 * 24;
             const dayOfYear = Math.floor(diff / oneDay);
             
-            // Use the day of year to select a quote (cycling through the quotes array)
-            const quoteIndex = dayOfYear % quotes.length;
-            const dailyQuote = quotes[quoteIndex];
+            // Get the year for seeding
+            const year = today.getFullYear();
+            const seed = getYearSeed(year);
+            
+            // Shuffle quotes with a seed based on the year
+            const shuffledQuotes = seededShuffle(quotes, seed);
+            
+            // Use the day of year to select a quote (cycling through the shuffled quotes array)
+            const quoteIndex = dayOfYear % shuffledQuotes.length;
+            const dailyQuote = shuffledQuotes[quoteIndex];
             
             // Update the DOM
             document.getElementById('quote').innerHTML = `"${dailyQuote.text}"`;
